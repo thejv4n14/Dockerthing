@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Network Control - Admin</title>
+<style>
+  :root{
+    --bg:#0b0f14; --surface:#121821; --surface-2:#18212c;
+    --primary:#1e88e5; --accent:#64b5f6;
+    --txt:#eef3f8; --muted:#9fb2c7;
+    --ok:#00d084; --warn:#ffb020; --err:#ff5252;
+    --bd:rgba(255,255,255,0.06); --shadow:rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--txt);
+    font:14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+    display:grid; grid-template-rows:auto 1fr;
+  }
+  header{
+    position:sticky; top:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px; background:linear-gradient(180deg, #0e141b, #0b0f14);
+    border-bottom:1px solid var(--bd);
+  }
+  .brand{display:flex; gap:10px; align-items:center}
+  .brand svg{width:24px; height:24px}
+  .userbar{display:flex; gap:10px; align-items:center}
+  .btn{background:var(--primary); color:#fff; border:0; padding:8px 12px; border-radius:10px; cursor:pointer; transition:filter .2s}
+  .btn:hover{filter:brightness(1.1)}
+  .layout{display:grid; grid-template-columns:260px 1fr; min-height:0}
+  nav{
+    border-right:1px solid var(--bd); background:var(--surface);
+    padding:16px; display:flex; flex-direction:column; gap:8px
+  }
+  .navlink {
+    display:flex; 
+    align-items:center; 
+    gap:10px; 
+    padding:10px 12px; 
+    border-radius:12px;
+    color:var(--txt); 
+    text-decoration:none; 
+    cursor:pointer; 
+    border:1px solid transparent;
+    transition:background .2s, border-color .2s;
+    background: var(--surface); 
+  }
+  .navlink[aria-current="page"], .navlink:hover {
+    background: var(--surface-2); 
+    border-color: var(--bd);
+  }
+  main{padding:20px; background:radial-gradient(1200px 600px at 20% -20%, #0e1621 0%, transparent 60%)}
+  .grid{display:grid; gap:16px}
+  @media(min-width:1024px){ .grid.cols-3{grid-template-columns:repeat(3,1fr)} .grid.cols-2{grid-template-columns:repeat(2,1fr)} }
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+    border:1px solid var(--bd); border-radius:16px; padding:16px; box-shadow:0 6px 24px var(--shadow)
+  }
+ .card h3{margin:0 0 10px; font-size:16px; letter-spacing:.2px}
+  .kv{display:grid; grid-template-columns:160px 1fr; gap:8px; margin-top:6px}
+  .badge{display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; border:1px solid var(--bd); font-size:12px; color:var(--muted)}
+  .badge.ok{color:#fff; background:linear-gradient(180deg, var(--ok), #02b871)}
+  .badge.warn{background:linear-gradient(180deg, var(--warn), #ff9800); color:#1a1a1a}
+  .badge.err{background:linear-gradient(180deg, var(--err), #d32f2f)}
+  .router-hero{display:flex; align-items:center; gap:16px}
+  .router-hero img, .router-hero svg{width:120px; height:120px; border-radius:14px; border:1px solid var(--bd); background:var(--surface-2)}
+  .speed-big{font-size:40px; font-weight:700; letter-spacing:.5px}
+  canvas{width:100%; height:140px; display:block}
+  .muted{color:var(--muted)}
+  .sr-only{position:absolute; width:1px; height:1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
+
+  .card table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.card th, .card td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--bd);
+  font-size: 14px;
+}
+.card th {
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: .5px;
+}
+.card tr:last-child td {
+  border-bottom: none;
+}
+.card tbody tr:hover {
+  background: rgba(100,181,246,0.07);
+}
+.card input[type="checkbox"] {
+  transform: scale(1.2);
+  accent-color: var(--primary);
+}
+@media (max-width: 700px) {
+  .card table, .card thead, .card tbody, .card th, .card td, .card tr {
+    display: block;
+  }
+  .card tr { margin-bottom: 10px; }
+  .card td, .card th {
+    padding: 8px 4px;
+    border-bottom: none;
+  }
+}
+
+#routerPasswordSection {
+  margin-top: 20px;
+}
+
+.router-icon {
+  font-size: 1.4em;
+  margin-right: 5px;
+}
+
+.password-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.password-wrapper input {
+  flex: 1;
+}
+
+.btn.small {
+  padding: 4px 8px;
+  font-size: 0.9em;
+}
+
+.delete-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.delete-btn:hover {
+  background-color: #c0392b;
+}
+
+</style>
+</head>
+<body>
+<header aria-label="Top bar">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 17h16v2H4zm2-6h12a2 2 0 012 2v2H4v-2a2 2 0 012-2zm3-6h2v4H9zm4 0h2v4h-2z"/></svg>
+    <strong>Network Control - Admin</strong>
+  </div>
+  <div class="userbar">
+    <span class="muted">User:</span><span id="userLabel">admin</span>
+    <button class="btn" id="logoutBtn">Log Out</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav>
+    <button class="navlink" id="linkHome" aria-current="page">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3z"/></svg>
+        Home
+      </button>
+    <button class="navlink" id="linkUsers">User Management</button>
+    <button class="navlink" id="linkAdvanced">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 12h18v2H3zm0-5h18v2H3zm0 10h18v2H3z"/></svg>
+        Advanced
+      </button>
+  </nav>
+
+  <main id="viewHome">
+      <div class="grid cols-3">
+        <section class="card" aria-labelledby="netOverviewTitle">
+          <h3 id="netOverviewTitle">Network Overview</h3>
+          <div class="kv"><div>Public IP</div><div id="ip">—</div></div>
+          <div class="kv"><div>ISP / Org</div><div id="isp">—</div></div>
+          <div class="kv"><div>ASN</div><div id="asn">—</div></div>
+          <div class="kv"><div>Location</div><div id="loc">—</div></div>
+          <div class="kv"><div>Connection</div><div id="conn">—</div></div>
+          <div style="margin-top:10px"><span id="connBadge" class="badge">Quality: —</span></div>
+        </section>
+
+        <section class="card" aria-labelledby="speedTitle">
+          <h3 id="speedTitle">Speed</h3>
+          <div class="speed-big"><span id="speedNow">—</span> <span class="muted">Mbps</span></div>
+          <div class="muted" style="margin-top:4px">Average of last tests: <strong id="speedAvg">—</strong> Mbps</div>
+          <div style="margin-top:12px"><button class="btn" id="testBtn" type="button">Run Speed Test</button></div>
+          <div class="muted" style="margin-top:8px" id="speedNote">Measures via timed download; falls back if CORS blocked.</div>
+          <canvas id="speedChart" aria-label="Speed history graph"></canvas>
+        </section>
+
+        <section class="card" aria-labelledby="routerTitle">
+          <h3 id="routerTitle">Detected Router</h3>
+          <div class="router-hero">
+            <img id="routerImg" alt="Router image" />
+            <!-- Fallback inline SVG -->
+            <svg id="routerSvg" viewBox="0 0 200 200" aria-hidden="true" style="display:none">
+              <rect x="30" y="90" width="140" height="50" rx="12" fill="#0f1720" stroke="rgba(255,255,255,0.08)"/>
+              <circle cx="60" cy="115" r="6" fill="#1e88e5"/>
+              <circle cx="80" cy="115" r="6" fill="#64b5f6"/>
+              <rect x="120" y="112" width="40" height="6" rx="3" fill="#1e88e5"/>
+              <path d="M60 90 q40-40 80 0" stroke="#1e88e5" fill="none" stroke-width="3"/>
+            </svg>
+            <div>
+              <div class="kv" style="grid-template-columns:110px 1fr">
+                <div>Gateway</div><div id="gw">Attempting…</div>
+                <div>Source</div><div id="gwSrc">favicon scan / fallback</div>
+              </div>
+              <div class="muted" style="margin-top:8px">If local login image is blocked by CORS, a clean SVG placeholder is shown.</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <main id="viewAdvanced" style="display:none">
+      <div class="grid cols-2">
+        <section class="card">
+          <h3>Identity</h3>
+          <div class="kv"><div>Username</div><div id="usernameDisplay">admin</div></div>
+          <div class="kv"><div>MACs</div><div id="mac">—</div></div>
+          <div class="kv"><div>User Agent</div><div id="ua" class="muted" style="word-break:break-all">—</div></div>
+        </section>
+
+        <section class="card">
+          <h3>Network Details</h3>
+          <div class="kv"><div>Public IP</div><div id="ip2">—</div></div>
+          <div class="kv"><div>Reverse DNS</div><div id="rdns">—</div></div>
+          <div class="kv"><div>ASN</div><div id="asn2">—</div></div>
+          <div class="kv"><div>Conn Type</div><div id="ctype">—</div></div>
+          <div class="kv"><div>Downlink</div><div id="downlink">—</div></div>
+          <div class="kv"><div>RTT</div><div id="rtt">—</div></div>
+          <div class="kv"><div>Timezone</div><div id="tz">—</div></div>
+          <div class="kv"><div>Locale</div><div id="locl">—</div></div>
+          <div class="kv"><div>Screen</div><div id="scr">—</div></div>
+          <div class="kv"><div>Memory</div><div id="mem">—</div></div>
+        </section>
+
+        <section id="routerPasswordSection" class="card">
+        <h3>
+          <span class="router-icon">📡</span> Router Password
+        </h3>
+        <div class="form-group">
+          <label for="routerPassword">Contraseña del router:</label>
+          <div class="password-wrapper">
+            <input type="password" id="routerPassword" placeholder="••••••••" />
+            <button type="button" id="toggleRouterPassword" class="btn small">👁</button>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <button type="button" id="saveRouterPassword" class="btn">Guardar</button>
+        </div>
+        <div id="routerSaveToast" class="badge" style="display:none;margin-top:8px">Guardado</div>
+      </section>
+
+      </div>
+    </main>
+
+  <main id="viewUsers" style="display:none">
+    <h2>User Management</h2>
+    <section class="card">
+      <h3>Connected Users</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>MAC</th>
+            <th>Access</th>
+            <th>Password</th>
+            <th>Actions</th> <!-- 📌 Nueva columna para botones -->
+          </tr>
+        </thead>
+        <tbody id="userTable"></tbody>
+      </table>
+    </section>
+</main>
+
+<script>
+(function(){
+  const $ = (sel)=>document.querySelector(sel);
+  const $$ = (sel)=>document.querySelectorAll(sel);
+  const state = {
+    speeds: JSON.parse(localStorage.getItem('speeds')||'[]').slice(-10),
+    username: localStorage.getItem('username') || 'admin'
+  };
+
+  let users = JSON.parse(localStorage.getItem('users') || '[]');
+  
+
+if (users.length === 0) {
+  users = [
+    {username:'Pepe', mac:'AA:BB:CC:11:22:33', blocked:false, password:'Hearthshape12'},
+    {username:'Goku', mac:'DD:EE:FF:44:55:66', blocked:true, password:'Gohan3420'},
+    {username:'NPC3', mac:'77:88:99:AA:BB:CC', blocked:false, password:'Soyunbot22'}
+  ];
+  localStorage.setItem('users', JSON.stringify(users));
+}
+
+  
+
+function updateUserAgent() {
+    const $ua = $('#ua');
+    
+    // Primero intentamos userAgentData (Chrome, Edge, Opera GX modernos)
+    if (navigator.userAgentData && navigator.userAgentData.brands) {
+        navigator.userAgentData.getHighEntropyValues(["platform", "platformVersion"])
+        .then(ua => {
+            // Construimos info legible
+            const brands = navigator.userAgentData.brands.map(b => b.brand + " " + b.version).join(", ");
+            $ua.textContent = `Browser: ${brands} | Platform: ${ua.platform} ${ua.platformVersion}`;
+        })
+        .catch(() => {
+            // fallback si falla
+            $ua.textContent = navigator.userAgent;
+        });
+    } else {
+        // Fallback tradicional
+        const userAgent = navigator.userAgent;
+        let browserName = "Unknown Browser";
+
+        if (userAgent.includes("OPR") && userAgent.includes("GX")) browserName = "Opera GX";
+        else if (userAgent.includes("OPR") || userAgent.includes("Opera")) browserName = "Opera";
+        else if (userAgent.includes("Firefox")) browserName = "Mozilla Firefox";
+        else if (userAgent.includes("Edg")) browserName = "Microsoft Edge";
+        else if (userAgent.includes("Chrome")) browserName = "Google Chrome";
+        else if (userAgent.includes("Safari")) browserName = "Apple Safari";
+
+        $ua.textContent = `${browserName} | ${userAgent}`;
+    }
+}
+
+// Ejecutar la función al cargar el script
+updateUserAgent();
+
+  // Routing
+  const linkHome = $('#linkHome');
+const linkUsers = $('#linkUsers');
+const linkAdvanced = $('#linkAdvanced');
+const viewHome = $('#viewHome');
+const viewUsers = $('#viewUsers');
+const viewAdvanced = $('#viewAdvanced'); 
+
+linkHome.addEventListener('click', ()=>{
+    viewHome.style.display='block';
+    viewUsers.style.display='none';
+    viewAdvanced.style.display='none';
+    linkHome.setAttribute('aria-current','page');
+    linkUsers.removeAttribute('aria-current');
+    linkAdvanced.removeAttribute('aria-current');
+});
+
+linkUsers.addEventListener('click', ()=>{
+    viewHome.style.display='none';
+    viewUsers.style.display='block';
+    viewAdvanced.style.display='none';
+    linkUsers.setAttribute('aria-current','page');
+    linkHome.removeAttribute('aria-current');
+    linkAdvanced.removeAttribute('aria-current');
+    renderUsers();
+});
+
+linkAdvanced.addEventListener('click', ()=>{
+    viewHome.style.display='none';
+    viewUsers.style.display='none';
+    viewAdvanced.style.display='block';
+    linkAdvanced.setAttribute('aria-current','page');
+    linkHome.removeAttribute('aria-current');
+    linkUsers.removeAttribute('aria-current');
+});
+
+
+function renderUsers(){
+    const tbody = document.getElementById('userTable');
+    tbody.innerHTML = '';
+
+    // Aseguramos que usamos el localStorage actualizado
+    users = JSON.parse(localStorage.getItem('users') || '[]');
+
+    users.forEach((u, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${u.username}</td>
+            <td>${u.mac || 'N/A'}</td>
+            <td><input type="checkbox" ${u.blocked ? 'checked' : ''} data-index="${i}"/></td>
+            <td>${u.password}</td>
+            <td><button class="delete-btn" data-index="${i}">Borrar</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    // Bloquear/desbloquear usuario
+    tbody.querySelectorAll('input[type="checkbox"]').forEach(ch => {
+        ch.addEventListener('change', e => {
+            const idx = e.target.dataset.index;
+            users[idx].blocked = e.target.checked;
+            localStorage.setItem('users', JSON.stringify(users));
+        });
+    });
+
+    // Botón borrar usuario
+    tbody.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+            const idx = e.target.dataset.index;
+            if(confirm(`¿Seguro que quieres borrar a ${users[idx].username}?`)){
+                users.splice(idx, 1);
+                localStorage.setItem('users', JSON.stringify(users));
+                renderUsers(); // Recargar tabla
+            }
+        });
+    });
+}
+
+// Llamar para pintar la tabla
+document.addEventListener('DOMContentLoaded', () => {
+    renderUsers();
+});
+  
+  // Username
+// Actualizamos el username si viene del login
+const loggedUser = localStorage.getItem('loggedUser');
+if (loggedUser) {
+  state.username = loggedUser;
+}
+
+// Mostrar username en header y en Advanced
+$('#userLabel').textContent = state.username;
+$('#userLabel').textContent = state.username;
+$('#usernameDisplay').textContent = state.username;
+
+
+  // Logout 
+$('#logoutBtn').addEventListener('click', ()=>{
+    localStorage.removeItem('loggedUser');
+    window.location.href='login.html';
+  });
+
+
+  // Random MAC generator (display only)
+  function randomMAC(){
+    const hex = '0123456789ABCDEF';
+    const arr = [];
+    for(let i=0;i<6;i++){
+      arr.push(hex[Math.floor(Math.random()*16)] + hex[Math.floor(Math.random()*16)]);
+    }
+    // Set locally administered bit
+    const first = parseInt(arr[0],16)|2; arr[0]=first.toString(16).padStart(2,'0').toUpperCase();
+    return arr.join(':');
+  }
+  $('#mac').textContent = randomMAC();
+
+  // User agent & system
+ 
+  $('#tz').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || '—';
+  $('#locl').textContent = navigator.language;
+  $('#scr').textContent = `${window.screen.width}×${window.screen.height} @${window.devicePixelRatio}x`;
+  $('#mem').textContent = (navigator.deviceMemory? navigator.deviceMemory+' GB':'—');
+
+  // Network Information API
+  const ni = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  function updateNI(){
+    if(!ni){ $('#conn').textContent='Not available'; $('#ctype').textContent='N/A'; $('#downlink').textContent='—'; $('#rtt').textContent='—'; return;}
+    $('#conn').textContent = `${ni.effectiveType || 'unknown'}`;
+    $('#ctype').textContent = ni.effectiveType || 'unknown';
+    $('#downlink').textContent = (ni.downlink? ni.downlink+' Mbps':'—');
+    $('#rtt').textContent = (ni.rtt? ni.rtt+' ms':'—');
+  }
+  updateNI(); if(ni) ni.addEventListener('change', updateNI);
+
+  // Public IP / ISP / ASN / Location (try ipapi.co then ipwho.is; also ipify as backup for IP only)
+  async function fetchIPMeta(){
+    try{
+      const r = await fetch('https://ipapi.co/json/');
+      if(r.ok){
+        const j = await r.json();
+        $('#ip').textContent = j.ip || '—';
+        $('#ip2').textContent = j.ip || '—';
+        $('#isp').textContent = j.org || j.isp || '—';
+        $('#asn').textContent = (j.asn? ('AS'+j.asn): '—');
+        $('#asn2').textContent = (j.asn? ('AS'+j.asn+' '+(j.asn_org||'')) : '—');
+        const flag = j.country_code ? String.fromCodePoint(...[...j.country_code].map(c=>0x1F1E6-65+c.charCodeAt())) : '';
+        $('#loc').textContent = `${j.city||''}${j.region? ', '+j.region:''}${j.country_name? ', '+j.country_name:''} ${flag}`;
+        $('#rdns').textContent = j.hostname || '—';
+        return;
+      }
+      throw new Error('ipapi failed');
+    }catch(e){
+      try{
+        const r2 = await fetch('https://ipwho.is/');
+        const j2 = await r2.json();
+        if(j2 && j2.success){
+          $('#ip').textContent = j2.ip || '—';
+          $('#ip2').textContent = j2.ip || '—';
+          $('#isp').textContent = j2.connection && j2.connection.org ? j2.connection.org : '—';
+          $('#asn').textContent = j2.connection && j2.connection.asn ? ('AS'+j2.connection.asn): '—';
+          $('#asn2').textContent = j2.connection && j2.connection.asn ? ('AS'+j2.connection.asn+' '+(j2.connection.org||'')) : '—';
+          const flag = j2.country_code ? String.fromCodePoint(...[...j2.country_code].map(c=>0x1F1E6-65+c.charCodeAt())) : '';
+          $('#loc').textContent = `${j2.city||''}${j2.region? ', '+j2.region:''}${j2.country||''} ${flag}`;
+          $('#rdns').textContent = j2.connection && j2.connection.domain ? j2.connection.domain : '—';
+          return;
+        }
+        throw new Error('ipwho failed');
+      }catch(e2){
+        const r3 = await fetch('https://api.ipify.org?format=json');
+        const j3 = await r3.json();
+        $('#ip').textContent = j3.ip || '—';
+        $('#ip2').textContent = j3.ip || '—';
+      }
+    }
+  }
+  fetchIPMeta();
+
+  // Speed test (simple timed download with fallbacks)
+  const speedNowEl = $('#speedNow');
+  const speedAvgEl = $('#speedAvg');
+  const testBtn = $('#testBtn');
+  const chartEl = $('#speedChart');
+  const ctx = chartEl.getContext('2d');
+
+  function drawChart(values){
+    const w = chartEl.width = chartEl.clientWidth;
+    const h = chartEl.height = chartEl.clientHeight;
+    ctx.clearRect(0,0,w,h);
+    if(!values.length) return;
+    const max = Math.max(...values, 10);
+    const pad = 10;
+    ctx.beginPath();
+    values.forEach((v,i)=>{
+      const x = pad + (i*(w-2*pad)/(values.length-1 || 1));
+      const y = h - pad - (v/max)*(h-2*pad);
+      i? ctx.lineTo(x,y): ctx.moveTo(x,y);
+    });
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#64b5f6';
+    ctx.stroke();
+  }
+  function updateSpeedsUI(){
+    const vals = state.speeds;
+    const avg = vals.length? (vals.reduce((a,b)=>a+b,0)/vals.length): 0;
+    speedNowEl.textContent = vals.length? vals[vals.length-1].toFixed(1): '—';
+    speedAvgEl.textContent = avg? avg.toFixed(1): '—';
+    drawChart(vals);
+    // badge
+    const last = vals[vals.length-1] || 0;
+    const badge = $('#connBadge');
+    badge.classList.remove('ok','warn','err');
+    let label = '—';
+    if(last>=100){ badge.classList.add('ok'); label='Excellent'; }
+    else if(last>=30){ badge.classList.add('warn'); label='Good'; }
+    else { badge.classList.add('err'); label='Poor'; }
+    badge.textContent = `Quality: ${label}`;
+    localStorage.setItem('speeds', JSON.stringify(vals.slice(-10)));
+  }
+  updateSpeedsUI();
+
+  async function runSpeedTest(){
+    testBtn.disabled = true; testBtn.textContent = 'Testing…';
+    const sizes = [2_000_000, 4_000_000, 6_000_000]; // bytes
+    let results = [];
+    for(const bytes of sizes){
+      try{
+        const url = `https://speed.cloudflare.com/__down?bytes=${bytes}&rnd=${Math.random()}`;
+        const t0 = performance.now();
+        const res = await fetch(url, {cache:'no-store'});
+        const blob = await res.blob(); // consume
+        const t1 = performance.now();
+        const secs = (t1 - t0)/1000;
+        const mbps = (bytes*8/1e6)/secs;
+        results.push(mbps);
+      }catch(err){
+        // fallback synthetic
+        const secs = 0.8 + Math.random()*0.6;
+        const mbps = 20 + Math.random()*60;
+        results.push(mbps);
+      }
+    }
+    const avg = results.reduce((a,b)=>a+b,0)/results.length;
+    state.speeds.push(avg); state.speeds = state.speeds.slice(-10);
+    updateSpeedsUI();
+    testBtn.disabled = false; testBtn.textContent = 'Run Speed Test';
+  }
+  testBtn.addEventListener('click', runSpeedTest);
+
+  // Detected Router (local + ISP heuristic)
+const gwTargets = [
+  {ip:'192.168.1.1', brand:'Generic'},
+  {ip:'192.168.0.1', brand:'Generic'},
+  {ip:'10.0.0.1', brand:'Generic'}
+];
+const routerImg = $('#routerImg');
+const routerSvg = $('#routerSvg');
+const gwLbl = $('#gw');
+const gwSrc = $('#gwSrc');
+
+async function detectRouter() {
+    let detected = false;
+
+    // Intentar cargar favicon local
+    for(const target of gwTargets){
+        await new Promise(r=>setTimeout(r,100));
+        await new Promise(res=>{
+            routerImg.onload = ()=>{
+                gwLbl.textContent = target.ip;
+                routerSvg.style.display='none';
+                detected = true;
+                res(true);
+            };
+            routerImg.onerror = ()=>res(false);
+            routerImg.referrerPolicy='no-referrer';
+            routerImg.crossOrigin='anonymous';
+            routerImg.src = `http://${target.ip}/favicon.ico?t=${Date.now()}`;
+        });
+        if(detected) break;
+    }
+
+    if(!detected){
+        routerImg.style.display='none';
+        routerSvg.style.display='block';
+        gwLbl.textContent = 'Not accessible (CORS/Network)';
+    }
+
+    // Intentar detectar ISP / proveedor desde IP pública
+    try {
+    const res = await fetch('https://ipapi.co/json/');
+    if (res.ok) {
+        const j = await res.json();
+
+        const isp = j.org || j.isp || '';
+        let source = 'Unknown';
+
+        if (/claro/i.test(isp) || /compa[ií]a\s+dominicana\s+de\s+tel[eé]fonos/i.test(isp)) {
+            source = 'Claro';
+        } else if (/altice/i.test(isp)) {
+            source = 'Altice';
+        } else if (/viva/i.test(isp)) {
+            source = 'Viva';
+        } else if (isp) {
+            source = isp;
+        }
+
+        gwSrc.textContent = source;
+        document.getElementById('location').textContent = `${j.city}, ${j.region}, ${j.country_name}`;
+        document.getElementById('publicIP').textContent = j.ip;
+
+    } else {
+        gwSrc.textContent = 'Unknown';
+        document.getElementById('location').textContent = 'Unknown';
+        document.getElementById('publicIP').textContent = 'Unknown';
+    }
+} catch (e) {
+    gwSrc.textContent = 'Unknown';
+    document.getElementById('location').textContent = 'Unknown';
+    document.getElementById('publicIP').textContent = 'Unknown';
+}
+
+}
+// Ejecutar la función
+detectRouter();
+
+// Router password management
+const routerPasswordInput = document.getElementById('routerPassword');
+const savedRouterPass = localStorage.getItem('routerPassword') || '';
+routerPasswordInput.value = savedRouterPass;
+
+// Mostrar / ocultar contraseña
+document.getElementById('toggleRouterPassword').addEventListener('click', () => {
+  if (routerPasswordInput.type === 'password') {
+    routerPasswordInput.type = 'text';
+  } else {
+    routerPasswordInput.type = 'password';
+  }
+});
+
+// Guardar contraseña
+document.getElementById('saveRouterPassword').addEventListener('click', () => {
+  localStorage.setItem('routerPassword', routerPasswordInput.value.trim());
+  const toast = document.getElementById('routerSaveToast');
+  toast.style.display = 'inline-flex';
+  setTimeout(() => toast.style.display = 'none', 1500);
+});
+
+
+  // Default to Home
+  go('home');
+})();
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  network-control:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      # Opcional: montar archivos para desarrollo en tiempo real
+      - ./templates:/usr/share/nginx/html/network-control:ro
+    restart: unless-stopped
+    container_name: network-control-app
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80

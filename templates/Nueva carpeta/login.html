@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<style>
+  :root{
+    --bg:#0b0f14; --surface:#121821; --surface-2:#18212c;
+    --primary:#1e88e5; --accent:#64b5f6;
+    --txt:#eef3f8; --muted:#9fb2c7;
+    --ok:#00d084; --warn:#ffb020; --err:#ff5252;
+    --bd:rgba(255,255,255,0.06); --shadow:rgba(0,0,0,0.35);
+  }
+  .password-strength {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .password-strength.weak { color: var(--err); }
+  .password-strength.medium { color: var(--warn); }
+  .password-strength.strong { color: var(--ok); }
+  .password-requirements {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  input:invalid {
+    border-color: var(--err);
+  }
+  .btn:disabled {
+    background: var(--muted);
+    cursor: not-allowed;
+    filter: none;
+  }
+  
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--txt);
+    font:14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .login-card{
+    background:var(--surface);
+    padding:30px;
+    border-radius:16px;
+    border:1px solid var(--bd);
+    box-shadow:0 6px 24px var(--shadow);
+    width:100%;
+    max-width:380px;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+  }
+  h2{text-align:center; font-size:20px;}
+  .form-group{display:flex; flex-direction:column; gap:6px;}
+  label{font-size:13px; color:var(--muted);}
+  input{
+    padding:10px;
+    border-radius:10px;
+    border:1px solid var(--bd);
+    background:var(--surface-2);
+    color:var(--txt);
+    font-size:14px;
+    outline:none;
+    transition:border-color .2s;
+  }
+  input:focus{border-color:var(--primary);}
+  .btn{
+    background:var(--primary);
+    color:#fff;
+    border:0;
+    padding:10px;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:14px;
+    font-weight:500;
+    transition:filter .2s;
+    margin-top:20px;
+  }
+  .btn:hover{filter:brightness(1.1);}
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <h2>Login</h2>
+  <form id="loginForm">
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="text" id="username" required>
+    </div>
+    
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" required>
+      <div id="passwordStrength" class="password-strength"></div>
+      <div class="password-requirements">
+        La contraseña debe contener al menos:
+        <ul>
+          <li id="reqUppercase">Una letra mayúscula</li>
+          <li id="reqNumber">Un número</li>
+        </ul>
+      </div>
+      <div id="loginError" style="color:var(--err); font-size:13px; margin-top:6px; display:none"></div>
+    </div>
+    <button type="submit" class="btn">Sign In</button>
+  </form>
+
+  <form id="registerForm" style="display:none;">
+  <div class="form-group">
+    <label for="regUsername">Username</label>
+    <input type="text" id="regUsername" required>
+  </div>
+  <div class="form-group">
+    <label for="regEmail">Correo electrónico</label>
+    <input type="email" id="regEmail" required>
+    <div id="emailError" style="color:var(--err); font-size:13px; margin-top:4px; display:none"></div>
+  </div>
+  <div class="form-group">
+    <label for="regPassword">Password</label>
+    <input type="password" id="regPassword" required>
+    <div id="regPasswordStrength" class="password-strength"></div>
+    <div class="password-requirements">
+      La contraseña debe contener al menos:
+      <ul>
+        <li id="regReqUppercase">Una letra mayúscula</li>
+        <li id="regReqNumber">Un número</li>
+      </ul>
+    </div>
+    <div id="registerError" style="color:var(--err); font-size:13px; margin-top:6px; display:none"></div>
+  </div>
+  <button type="submit" class="btn">Registrar</button>
+</form>
+
+<div style="text-align:center; margin-top:10px;">
+  <a href="#" id="showRegister" style="color:var(--accent); text-decoration:underline; cursor:pointer;">¿No tienes cuenta? Regístrate</a>
+  <a href="#" id="showLogin" style="color:var(--accent); text-decoration:underline; cursor:pointer; display:none;">¿Ya tienes cuenta? Inicia sesión</a>
+</div>
+</div>
+
+<script>
+  const passwordInput = document.getElementById('password');
+  const strengthIndicator = document.getElementById('passwordStrength');
+  const reqUppercase = document.getElementById('reqUppercase');
+  const reqNumber = document.getElementById('reqNumber');
+  const submitBtn = document.querySelector('.btn');
+  const form = document.getElementById('loginForm');
+
+  function checkPasswordStrength(password) {
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    
+    // Actualizar indicadores de requisitos
+    reqUppercase.style.color = hasUpperCase ? 'var(--ok)' : 'var(--muted)';
+    reqNumber.style.color = hasNumber ? 'var(--ok)' : 'var(--muted)';
+
+    // Evaluar fortaleza
+    if (password.length === 0) {
+      strengthIndicator.textContent = '';
+      strengthIndicator.className = 'password-strength';
+      return false;
+    } else if (password.length < 6) {
+      strengthIndicator.textContent = 'Muy corta';
+      strengthIndicator.className = 'password-strength weak';
+      return false;
+    } else if (!hasUpperCase || !hasNumber) {
+      strengthIndicator.textContent = 'Débil';
+      strengthIndicator.className = 'password-strength weak';
+      return false;
+    } else if (password.length < 8) {
+      strengthIndicator.textContent = 'Media';
+      strengthIndicator.className = 'password-strength medium';
+      return true;
+    } else {
+      strengthIndicator.textContent = 'Fuerte';
+      strengthIndicator.className = 'password-strength strong';
+      return true;
+    }
+  }
+
+const loginError = document.getElementById('loginError');
+
+// Validación en tiempo real
+passwordInput.addEventListener('input', function(e) {
+  const isValid = checkPasswordStrength(this.value);
+  submitBtn.disabled = !isValid;
+  loginError.style.display = 'none'; // Oculta el error al escribir
+});
+
+// Manejo del formulario
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  loginError.style.display = 'none';
+  const user = document.getElementById('username').value.trim();
+  const password = passwordInput.value;
+
+  // Verificación final de seguridad
+  if (!checkPasswordStrength(password)) {
+    loginError.textContent = 'La contraseña no cumple con los requisitos mínimos de seguridad';
+    loginError.style.display = 'block';
+    return;
+  }
+
+  // Validación especial para admin
+  if(user.toLowerCase() === 'admin') {
+    if(password === 'Escogidochamp18') {
+      localStorage.setItem('loggedUser', user);
+      window.location.href = 'admin.html';
+    } else {
+      loginError.textContent = 'Contraseña de admin incorrecta';
+      loginError.style.display = 'block';
+      return;
+    }
+    return;
+  }
+
+  // Para otros usuarios
+  const users = JSON.parse(localStorage.getItem('users') || '[]');
+  const found = users.find(u => u.username.toLowerCase() === user.toLowerCase());
+  if(!found) {
+    loginError.textContent = 'Usuario no encontrado';
+    loginError.style.display = 'block';
+    return;
+  }
+  // Solo pueden entrar los que tienen la casilla marcada (blocked === true)
+  if(!found.blocked) {
+    loginError.textContent = 'Su acceso a la red no ha sido aceptado';
+    loginError.style.display = 'block';
+    return;
+  }
+  if(found.password !== password) {
+    loginError.textContent = 'Contraseña incorrecta';
+    loginError.style.display = 'block';
+    return;
+  }
+
+  // Si pasa todas las validaciones
+  localStorage.setItem('loggedUser', user);
+  window.location.href = 'dashboard.html';
+});
+
+const showRegister = document.getElementById('showRegister');
+const showLogin = document.getElementById('showLogin');
+const loginForm = document.getElementById('loginForm');
+const registerForm = document.getElementById('registerForm');
+
+// Cambiar entre login y registro
+showRegister.addEventListener('click', function(e){
+  e.preventDefault();
+  loginForm.style.display = 'none';
+  registerForm.style.display = 'block';
+  showRegister.style.display = 'none';
+  showLogin.style.display = 'inline';
+});
+showLogin.addEventListener('click', function(e){
+  e.preventDefault();
+  loginForm.style.display = 'block';
+  registerForm.style.display = 'none';
+  showRegister.style.display = 'inline';
+  showLogin.style.display = 'none';
+});
+
+// Validación de contraseña para registro
+const regPasswordInput = document.getElementById('regPassword');
+const regStrengthIndicator = document.getElementById('regPasswordStrength');
+const regReqUppercase = document.getElementById('regReqUppercase');
+const regReqNumber = document.getElementById('regReqNumber');
+const registerError = document.getElementById('registerError');
+const regEmailInput = document.getElementById('regEmail');
+const emailError = document.getElementById('emailError');
+
+function checkRegPasswordStrength(password) {
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+
+  regReqUppercase.style.color = hasUpperCase ? 'var(--ok)' : 'var(--muted)';
+  regReqNumber.style.color = hasNumber ? 'var(--ok)' : 'var(--muted)';
+
+  if (password.length === 0) {
+    regStrengthIndicator.textContent = '';
+    regStrengthIndicator.className = 'password-strength';
+    return false;
+  } else if (password.length < 6) {
+    regStrengthIndicator.textContent = 'Muy corta';
+    regStrengthIndicator.className = 'password-strength weak';
+    return false;
+  } else if (!hasUpperCase || !hasNumber) {
+    regStrengthIndicator.textContent = 'Débil';
+    regStrengthIndicator.className = 'password-strength weak';
+    return false;
+  } else if (password.length < 8) {
+    regStrengthIndicator.textContent = 'Media';
+    regStrengthIndicator.className = 'password-strength medium';
+    return true;
+  } else {
+    regStrengthIndicator.textContent = 'Fuerte';
+    regStrengthIndicator.className = 'password-strength strong';
+    return true;
+  }
+}
+
+regPasswordInput.addEventListener('input', function() {
+  const isValid = checkRegPasswordStrength(this.value);
+  registerError.style.display = 'none';
+  this.setCustomValidity(isValid ? '' : 'Contraseña insegura');
+});
+
+// Validación de correo electrónico
+function validateEmail(email) {
+  // Simple: debe tener @ y un punto después
+  return /^[^@]+@[^@]+\.[a-zA-Z]{2,}$/.test(email);
+}
+
+regEmailInput.addEventListener('input', function() {
+  if (!validateEmail(this.value)) {
+    emailError.textContent = 'Correo electrónico no válido';
+    emailError.style.display = 'block';
+  } else {
+    emailError.style.display = 'none';
+  }
+});
+
+function generateRandomMAC() {
+  return Array.from({length: 6}, () => {
+    return Math.floor(Math.random() * 256).toString(16).padStart(2, '0');
+  }).join(':').toUpperCase();
+}
+
+// Registro de usuario
+
+function generateMacAddress() {
+  const hex = "0123456789ABCDEF";
+  let mac = "";
+  for (let i = 0; i < 6; i++) {
+    mac += hex.charAt(Math.floor(Math.random() * 16));
+    mac += hex.charAt(Math.floor(Math.random() * 16));
+    if (i < 5) mac += ":";
+  }
+  return mac;
+}
+
+registerForm.addEventListener('submit', function(e){
+  e.preventDefault();
+  registerError.style.display = 'none';
+  emailError.style.display = 'none';
+
+  const username = document.getElementById('regUsername').value.trim();
+  const email = regEmailInput.value.trim();
+  const password = regPasswordInput.value;
+
+  if (!checkRegPasswordStrength(password)) {
+    registerError.textContent = 'La contraseña no cumple con los requisitos mínimos de seguridad';
+    registerError.style.display = 'block';
+    return;
+  }
+  if (!validateEmail(email)) {
+    emailError.textContent = 'Correo electrónico no válido';
+    emailError.style.display = 'block';
+    return;
+  }
+
+  const users = JSON.parse(localStorage.getItem('users') || '[]');
+  if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) {
+    registerError.textContent = 'El usuario ya existe';
+    registerError.style.display = 'block';
+    return;
+  }
+
+  // Guardar usuario (ahora acceso permitido por defecto)
+  users.push({
+    username: username,
+    mac: generateMacAddress(), // Puedes generar una MAC si quieres
+    blocked: true, // El usuario puede entrar inmediatamente
+    password: password,
+    email: email
+  });
+  localStorage.setItem('users', JSON.stringify(users));
+
+  // Mensaje de éxito y volver al login
+  alert('Usuario registrado. Ya puedes iniciar sesión.');
+  registerForm.reset();
+  showLogin.click();
+});
+</script>
+
+</body>
+</html>
