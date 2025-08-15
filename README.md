@@ -2,7 +2,7 @@
 
 Demo de app web para tarea de Seguridad de Aplicaciones.
 
-- Login y “sesión” en frontend (localStorage)
+- Login y sesión
 - Dockerizada con Nginx
 
 ## Estructura
